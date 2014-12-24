@@ -23,12 +23,14 @@
         - wget
 
     - name: install apache web server
+      notify: restart apache
       apt: pkg={{ item }} state=latest update_cache=yes cache_valid_time=3600
       with_items:
           - apache2
           # might expand later, just being prepared :)
 
     - name: install PHP and related libraries
+      notify: restart php5-fpm
       apt: pkg={{ item }} state=latest update_cache=yes cache_valid_time=3600
       with_items:
           # See list of Wordpress reqs
@@ -61,8 +63,7 @@
       copy: src=files/phptest.php dest=/var/www/html/phptest.php
 
     - name: activate common apache2 modules
-      notify:
-        - restart apache
+      notify: restart apache
       apache2_module: name={{ item }} state=present
       with_items:
           - access_compat
@@ -91,17 +92,18 @@
           - status
 
     - name: install a default apache vhost
+      notify: restart apache
       template: src=templates/apache2_vhost.j2 dest=/etc/apache2/sites-available/001-default.conf
 
     - name: disable the system default apache vhost
+      notify: restart apache
       command: a2dissite 000-default
-      notify:
-        - restart apache
+               removes=/etc/apache2/sites-enabled/000-default.conf
 
     - name: enable our installed default apache vhost
+      notify: restart apache
       command: a2ensite 001-default
-      notify:
-        - restart apache
+               creates=/etc/apache2/sites-enabled/001-default.conf
 
     - name: start the php5-fpm service
       service: name=php5-fpm state=started enabled=true
