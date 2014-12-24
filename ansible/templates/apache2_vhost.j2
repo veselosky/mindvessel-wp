@@ -1,0 +1,30 @@
+#=====================================================================
+# Redirect alias domains to main domain
+#=====================================================================
+#<VirtualHost *:80>
+#ServerName www.{{ domain }}
+#Redirect permanent / http://{{ domain }}/
+#</VirtualHost>
+
+#=====================================================================
+# Main domain
+#=====================================================================
+<VirtualHost *:80>
+ServerName {{ domain }}
+DocumentRoot {{ website_root }}
+DefaultType text/html
+
+<Directory {{ website_root }}>
+    Options Includes FollowSymLinks
+    AllowOverride All
+    # Replaces Allow/Deny from earlier Apaches
+    Require all granted
+</Directory>
+
+# Enable PHP files to be handled by fast CGI (php5-fpm)
+# NOTE: support for unix domain sockets not added until 2.4.8
+ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://{{ fastcgi_listen }}/var/www/html/$1
+
+DirectoryIndex index.html index.php
+
+</VirtualHost>

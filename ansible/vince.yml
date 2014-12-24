@@ -1,0 +1,29 @@
+---
+- sudo: yes
+  hosts: webservers
+  vars:
+    - keyfile: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"
+
+  vars_prompt:
+    - name: vince_pass
+      prompt: 'password to set on remote user account'
+      private: yes
+      confirm: yes
+      encrypt: "sha512_crypt"
+
+  tasks:
+    - name: create the vince group
+      group: name=vince
+
+    - name: create the vince user
+      user: name=vince group=vince password={{ vince_pass }} shell=/bin/bash
+
+    # Necessary because file system mounted here as root initially.
+    - name: ensure home directory permissions
+      file: path=/home/vince owner=vince group=vince recurse=yes state=directory
+
+    - name: set ssh keys so vince can log in
+      authorized_key: user=vince key="{{ lookup('file', keyfile) }}"
+
+    - name: add vince to sudoers file
+      lineinfile: line="vince    ALL=(ALL:ALL) ALL" dest=/etc/sudoers
