@@ -7,12 +7,20 @@ Mindvessel.com.
 The recipe assumes a bare Ubuntu 14.04 LTS ("Trusty") server as a starting
 point.
 
-Following host vars must be set. Vagrantfile sets them for testing, your
+Server Inventory
+----------------------------------------
+The following server groups must exist:
+
+* wordpress-servers — the Apache/PHP servers for Wordpress
+* database-servers — the database servers that Wordpress will talk to
+
+The following host vars must be set. Vagrantfile sets them for testing, your
 Ansible inventory file will need to set them for real runs.
 
-* domain
-* fastcgi_listen
-* website_root
+* domain — For wordpress-servers, the domain for the Apache vhost
+* fastcgi_listen — For wordpress-servers, the FastCGI IP:Port where PHP listens
+* website_root — For wordpress-servers, where Apache serves from
+* wordpress_db_pass — password to set for the wordpress database user account
 
 Getting Apache/PHP Working
 ----------------------------------------
@@ -31,3 +39,10 @@ configured for php5-fpm to listen on a unix domain socket, not a TCP socket.
 Thus, we need to reconfigure php5-fpm to listen on a TCP socket.
 
 Ref: https://bugs.launchpad.net/ubuntu/+source/apache2/+bug/1324828
+
+Database
+----------------------------------------
+Sigh. Provisioning databases with Ansible is radically different depending
+whether you have manually controlled server install vs. an AWS RDS instance.
+This makes testing with Virtualbox very tricky. For now I'm just doing a bare
+minimum Virtualbox setup. Later I will swing back through and add the RDS code.

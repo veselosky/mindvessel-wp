@@ -1,0 +1,99 @@
+---
+- hosts: wordpress-servers
+  sudo: yes
+  tasks:
+    - name: install apache web server
+      notify: restart apache
+      apt: pkg={{ item }} state=latest update_cache=yes cache_valid_time=3600
+      with_items:
+          - apache2
+          # might expand later, just being prepared :)
+
+    - name: install PHP and related libraries
+      notify: restart php5-fpm
+      apt: pkg={{ item }} state=latest update_cache=yes cache_valid_time=3600
+      with_items:
+          # See list of Wordpress reqs
+          # http://wordpress.stackexchange.com/questions/42098/
+          - php5-fpm
+          - php5-cli
+          - php5-curl
+          - php5-gd
+          - php5-imagick
+          - php5-json
+          - php5-mysql
+
+    - name: set php-fpm to listen on TCP instead of UDS
+      notify: restart php5-fpm
+      ini_file: dest=/etc/php5/fpm/pool.d/www.conf
+                backup=yes
+                section=www
+                option=listen
+                value={{ fastcgi_listen }}
+
+    - name: restrict php-fpm to respond to local connections only
+      notify: restart php5-fpm
+      ini_file: dest=/etc/php5/fpm/pool.d/www.conf
+                backup=yes
+                section=www
+                option=listen.allowed_clients
+                value=127.0.0.1
+
+    - name: add a PHP test page
+      copy: src=files/phptest.php dest={{ website_root }}/phptest.php
+
+    - name: activate common apache2 modules
+      notify: restart apache
+      apache2_module: name={{ item }} state=present
+      with_items:
+          - access_compat
+          - alias
+          - auth_basic
+          - auth_digest
+          - auth_form
+          - authn_core
+          - authn_file
+          - authz_core
+          - authz_host
+          - authz_user
+          - deflate
+          - dir
+          - env
+          - expires
+          - filter
+          - include
+          - info
+          - mime
+          - negotiation
+          - proxy
+          - proxy_fcgi
+          - rewrite
+          - setenvif
+          - status
+
+    - name: install a default apache vhost
+      notify: restart apache
+      template: src=templates/apache2_vhost.j2 dest=/etc/apache2/sites-available/001-default.conf
+
+    - name: disable the system default apache vhost
+      notify: restart apache
+      command: a2dissite 000-default
+               removes=/etc/apache2/sites-enabled/000-default.conf
+
+    - name: enable our installed default apache vhost
+      notify: restart apache
+      command: a2ensite 001-default
+               creates=/etc/apache2/sites-enabled/001-default.conf
+
+    - name: start the php5-fpm service
+      service: name=php5-fpm state=started enabled=true
+
+    - name: start apache2 daemon
+      service: name=apache2 state=started enabled=true
+
+  handlers:
+    - name: restart apache
+      service: name=apache2 state=restarted
+
+    - name: restart php5-fpm
+      service: name=php5-fpm state=restarted
