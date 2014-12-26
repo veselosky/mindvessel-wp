@@ -27,8 +27,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         }
         ansible.extra_vars = {
           "domain" => "localhost",
-          "website_root" => "/var/www/html",
           "fastcgi_listen" => "127.0.0.1:9000",
+          "webmaster_pass" => "password",
+          "webmaster_crypt_pass" => "$6$rounds=100000$5UstpnzLCZ4VIcQ9$lOixDksA/xNMYe6WxqFb0pFRRYwhfF28MeggovS/InsJoD9GixfRdM0kFXVa.t/kMrhWjOTXtf2mNowfxoUM1.",
           "wordpress_db_pass" => "weakpass"
         }
     end
