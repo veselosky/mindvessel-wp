@@ -1,0 +1,146 @@
+---
+- name: Wordpress server
+  hosts: wordpress-servers
+  sudo: yes
+  vars:
+    - wordpress_db_name: "{{ wordpress_database_name | default('wordpress') }}"
+    - wordpress_db_user: "{{ wordpress_database_user | default('wordpress') }}"
+    - wordpress_db_pass: "{{ wordpress_database_pass }}"
+    - wordpress_db_host: "{{ wordpress_database_host | default('localhost') }}"
+    - wordpress_home: "/home/webmaster/websites/wordpress"
+  tasks:
+
+    # Database actions assume connection info in .my.cnf
+    - name: create the wordpress database
+      mysql_db: name={{ wordpress_db_name }} state=present
+
+    - name: create Wordpress database credentials
+      mysql_user: name={{ wordpress_db_user | default('wordpress') }}
+                  priv=wordpress.*:ALL
+                  password={{ wordpress_db_pass }}
+
+    - name: create the wordpress root directory
+      file: path={{ wordpress_home }}
+            state=directory
+            owner=webmaster
+            group=webmaster
+            mode=0755
+
+    - name: create the wordpress plugins directory
+      file: path={{ wordpress_home }}/plugins
+            state=directory
+            owner=webmaster
+            group=webmaster
+            mode=0755
+
+    - name: create the wordpress wp-content directory
+      # must be writable by web server
+      file: path={{ wordpress_home }}/media
+            state=directory
+            owner=webmaster
+            group=www-data
+            mode=0775
+
+    - name: create the wordpress themes directory
+      file: path={{ wordpress_home }}/themes
+            state=directory
+            owner=webmaster
+            group=webmaster
+            mode=0755
+
+    - name: generate secret keys for Wordpress config
+      get_url:  url=https://api.wordpress.org/secret-key/1.1/salt/
+                dest={{ wordpress_home }}/wp-secret-keys.php
+                owner=webmaster
+                group=www-data
+                mode=0640
+    - name: open php tag in secret keys config
+      lineinfile: dest={{ wordpress_home }}/wp-secret-keys.php
+                  insertbefore=BOF
+                  line="<?php"
+    - name: close php tag in secret keys config
+      lineinfile: dest={{ wordpress_home }}/wp-secret-keys.php
+                  insertafter=EOF
+                  line="?>"
+
+    - name: install wp-config template
+      # Note that wp-config should be installed BEFORE installing the Wordpress
+      # archive, to prevent a brief window of security vulnerability.
+      template: src=templates/wp-config.php.j2
+                dest={{ wordpress_home }}/wp-config.php
+                owner=webmaster
+                group=www-data
+                mode=0640
+
+    - name: install htpasswd file for wordpress
+      # Store outside the docroot! Set up to be readable only by web server
+      htpasswd: path={{ wordpress_home }}/htpasswd
+                state=present
+                name=webmaster
+                password={{ webmaster_pass }}
+                owner=webmaster
+                group=www-data
+                mode=0640
+
+    - name: download wordpress archive
+      sudo_user: webmaster
+      get_url: url=http://wordpress.org/wordpress-{{ wordpress_version }}.tar.gz
+               sha256sum={{ wordpress_sha256 }}
+               dest={{ wordpress_home }}/wp{{ wordpress_version }}.tar.gz
+
+    - name: extract the wordpress archive
+      # NOTE: The "creates" is a lie here. Damnable wordpress archive always
+      # extracts to a top-level "wordpress" directory, which will collide with
+      # previous versions unless it is renamed. Renaming happens in the next
+      # task. Using the rename destination as the "creates" param here prevents
+      # this task from running if the versions match.
+      unarchive:  src={{ wordpress_home }}/wp{{ wordpress_version}}.tar.gz
+                  dest={{ wordpress_home }}/
+                  creates={{ wordpress_home }}/wp{{ wordpress_version }}
+                  copy=no
+                  owner=webmaster
+                  group=webmaster
+
+    - name: move the wordpress code
+      command:  mv {{ wordpress_home }}/wordpress {{ wordpress_home }}/wp{{ wordpress_version}}
+                creates={{ wordpress_home }}/wp{{ wordpress_version}}
+
+    - name: fix ownership of wordpress code files
+      file: path={{ wordpress_home }}/wp{{ wordpress_version}}
+            state=directory
+            owner=webmaster
+            group=webmaster
+            mode="u=rwX,g=rX,o=rX"
+            recurse=yes
+
+    - name: force the code symlink to point to the newly installed wordpress
+      file: path={{ wordpress_home }}/public_html
+            state=link
+            src={{ wordpress_home }}/wp{{ wordpress_version }}
+            owner=webmaster
+            group=webmaster
+
+    - name: symlink wordpress themes into the content directory
+      # If you don't do this, wordpress can't find its default themes.
+      file: path={{ wordpress_home }}/media/themes
+            state=link
+            src={{ wordpress_home }}/public_html/wp-content/themes
+            owner=webmaster
+            group=webmaster
+
+    - name: install apache vhost for wordpress
+      notify: restart apache
+      template: src=templates/wordpress_vhost.j2
+                dest=/etc/apache2/sites-available/wordpress.conf
+
+    - name: enable the wordpress apache vhost
+      notify: restart apache
+      command: a2ensite wordpress
+               creates=/etc/apache2/sites-enabled/wordpress.conf
+
+  handlers:
+    - name: restart apache
+      service: name=apache2 state=restarted
+
+    - name: restart php5-fpm
+      service: name=php5-fpm state=restarted

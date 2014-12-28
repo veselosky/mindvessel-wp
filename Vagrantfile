@@ -18,7 +18,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     webserver.ssh.forward_agent = true
 
     webserver.vm.provision "ansible" do |ansible|
-#        ansible.playbook = "ansible/site.yml"
         ansible.playbook = "ansible/site.yml"
         ansible.groups = {
           "webservers" => ["webserver"],
@@ -30,7 +29,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           "fastcgi_listen" => "127.0.0.1:9000",
           "webmaster_pass" => "password",
           "webmaster_crypt_pass" => "$6$rounds=100000$5UstpnzLCZ4VIcQ9$lOixDksA/xNMYe6WxqFb0pFRRYwhfF28MeggovS/InsJoD9GixfRdM0kFXVa.t/kMrhWjOTXtf2mNowfxoUM1.",
-          "wordpress_db_pass" => "weakpass"
+          "wordpress_database_pass" => "weakpass",
+          "wordpress_domain" => "wordpress.localhost",
+          "wordpress_version" => "4.1",
+          "wordpress_sha256" => "3743d82698571903382dc223940e712f7bb5cfd20cedba7b7c32c97d470defab"
         }
     end
   end

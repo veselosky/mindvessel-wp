@@ -2,3 +2,4 @@
 - include: role-base-server.yml
 - include: role-php-server.yml
 - include: role-db-server.yml
+- include: role-wordpress-server.yml

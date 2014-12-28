@@ -1,0 +1,56 @@
+<?php
+# http://codex.wordpress.org/Editing_wp-config.php
+
+# Database Settings
+define('DB_NAME', '{{ wordpress_db_name }}');
+define('DB_USER', '{{ wordpress_db_user }}');
+define('DB_PASSWORD', '{{ wordpress_db_pass }}');
+define('DB_HOST', '{{ wordpress_db_host }}');
+define('DB_CHARSET', 'utf8');
+define('DB_COLLATE', '');
+
+# Ansible recipe sets these using https://api.wordpress.org/secret-key/1.1/salt/
+include 'wp-secret-keys.php';
+
+# Customizing MAY protect against some blind SQL injection attacks?
+$table_prefix  = 'mvwp_';
+
+# Turn on multi-site networks
+# define( 'WP_ALLOW_MULTISITE', true );
+
+# NEVER use debug mode in production!
+define('WP_DEBUG', false);
+
+# Disables plugin and theme update/install
+define( 'DISALLOW_FILE_MODS', true );
+
+# Disables plugin and theme editor when update/install are allowed.
+define( 'DISALLOW_FILE_EDIT', true );
+
+# Auto-updates require php files writable by web server, massive security error
+define( 'AUTOMATIC_UPDATER_DISABLED', true );
+
+# Absolute path to the WordPress directory. This is customized because we move
+# our wp-config.php up a directory, out of the document root.
+if ( !defined('ABSPATH') )
+	define('ABSPATH', dirname(__FILE__) . '/wordpress/');
+
+
+# Move the wp-content directory out of the code path to keep code separate from
+# content, easing upgrades. Note that the content directory MUST contain a
+# symlink to the default themes directory, or Wordpress is unhappy.
+define( 'WP_CONTENT_DIR', dirname(__FILE__) . '/media' );
+define( 'WP_CONTENT_URL', '/media' );
+
+# Relocate the plugins directory outside of content, so it can be managed
+# separately.
+define( 'WP_PLUGIN_DIR', dirname(__FILE__) . '/plugins' );
+define( 'WP_PLUGIN_URL', '/plugins' );
+
+/** Sets up WordPress vars and included files. */
+require_once(ABSPATH . 'wp-settings.php');
+
+# Themes cannot be "moved" out of the wp-content directory, but we can register
+# other theme directories. NOTE: the registration function is loaded in
+# theme.php so this code MUST come AFTER loading wp-settings.php.
+register_theme_directory(dirname(__FILE__) . '/themes' );
