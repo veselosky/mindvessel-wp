@@ -19,34 +19,26 @@
                   priv=wordpress.*:ALL
                   password={{ wordpress_db_pass }}
 
-    - name: create the wordpress root directory
-      file: path={{ wordpress_home }}
+    - name: create the wordpress directories
+      file: path={{ item }}
             state=directory
             owner=webmaster
             group=webmaster
             mode=0755
+      with_items:
+        - "{{ wordpress_home }}"
+        - "{{ wordpress_home }}/bin"
+        - "{{ wordpress_home }}/plugins"
+        - "{{ wordpress_home }}/media/themes"
+        - "{{ wordpress_home }}/wp{{ wordpress_version }}"
 
-    - name: create the wordpress plugins directory
-      file: path={{ wordpress_home }}/plugins
-            state=directory
-            owner=webmaster
-            group=webmaster
-            mode=0755
-
-    - name: create the wordpress wp-content directory
+    - name: set permissions on wordpress wp-content directory
       # must be writable by web server
       file: path={{ wordpress_home }}/media
             state=directory
             owner=webmaster
             group=www-data
             mode=0775
-
-    - name: create the wordpress themes directory
-      file: path={{ wordpress_home }}/themes
-            state=directory
-            owner=webmaster
-            group=webmaster
-            mode=0755
 
     - name: generate secret keys for Wordpress config
       get_url:  url=https://api.wordpress.org/secret-key/1.1/salt/
@@ -84,26 +76,15 @@
 
     - name: download wordpress archive
       sudo_user: webmaster
-      get_url: url=http://wordpress.org/wordpress-{{ wordpress_version }}.tar.gz
+      get_url: url=https://downloads.wordpress.org/release/wordpress-{{ wordpress_version }}.tar.gz
                sha256sum={{ wordpress_sha256 }}
                dest={{ wordpress_home }}/wp{{ wordpress_version }}.tar.gz
 
     - name: extract the wordpress archive
-      # NOTE: The "creates" is a lie here. Damnable wordpress archive always
-      # extracts to a top-level "wordpress" directory, which will collide with
-      # previous versions unless it is renamed. Renaming happens in the next
-      # task. Using the rename destination as the "creates" param here prevents
-      # this task from running if the versions match.
-      unarchive:  src={{ wordpress_home }}/wp{{ wordpress_version}}.tar.gz
-                  dest={{ wordpress_home }}/
-                  creates={{ wordpress_home }}/wp{{ wordpress_version }}
-                  copy=no
-                  owner=webmaster
-                  group=webmaster
-
-    - name: move the wordpress code
-      command:  mv {{ wordpress_home }}/wordpress {{ wordpress_home }}/wp{{ wordpress_version}}
-                creates={{ wordpress_home }}/wp{{ wordpress_version}}
+      sudo_user: webmaster
+      command:  tar -C {{ wordpress_home }}/wp{{ wordpress_version}} -xzf
+                {{ wordpress_home }}/wp{{ wordpress_version}}.tar.gz --strip-components=1
+                creates={{ wordpress_home }}/wp{{ wordpress_version}}/index.php
 
     - name: fix ownership of wordpress code files
       file: path={{ wordpress_home }}/wp{{ wordpress_version}}
@@ -122,11 +103,46 @@
 
     - name: symlink wordpress themes into the content directory
       # If you don't do this, wordpress can't find its default themes.
-      file: path={{ wordpress_home }}/media/themes
-            state=link
-            src={{ wordpress_home }}/public_html/wp-content/themes
-            owner=webmaster
-            group=webmaster
+      # NOTE: Use of wildcards requires use of ``shell`` vs ``command``.
+      sudo_user: webmaster
+      shell: ln -sf {{ wordpress_home }}/public_html/wp-content/themes/* {{ wordpress_home }}/media/themes/
+            creates={{ wordpress_home }}/media/themes/index.php
+
+    - name: download the wordpress CLI
+      get_url: url=https://raw.github.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+               dest={{ wordpress_home }}/bin/wp
+               owner=webmaster
+               group=webmaster
+               mode=0755
+
+    - name: install the wordpress tables in the database
+      # required for subsequent wp commands to work
+      sudo_user: webmaster
+      command: "{{ wordpress_home }}/bin/wp core install
+                --url={{ wordpress_domain }}
+                --title=Mindvessel
+                --admin_user=TheBoss
+                --admin_password={{ webmaster_pass }}
+                --admin_email=editor@mindvessel.com
+               chdir={{ wordpress_home }}/public_html"
+
+    - name: install iThemes Security plugin
+      sudo_user: webmaster
+      command: "{{ wordpress_home }}/bin/wp plugin install better-wp-security
+               chdir={{ wordpress_home }}/public_html
+               creates={{ wordpress_home }}/plugins/better-wp-security"
+
+    - name: install PressForward plugin
+      sudo_user: webmaster
+      command: "{{ wordpress_home }}/bin/wp plugin install pressforward
+               chdir={{ wordpress_home }}/public_html
+               creates={{ wordpress_home }}/plugins/pressforward"
+
+    - name: install Jetpack plugin
+      sudo_user: webmaster
+      command: "{{ wordpress_home }}/bin/wp plugin install jetpack
+               chdir={{ wordpress_home }}/public_html
+               creates={{ wordpress_home }}/plugins/jetpack"
 
     - name: install apache vhost for wordpress
       notify: restart apache
@@ -137,6 +153,17 @@
       notify: restart apache
       command: a2ensite wordpress
                creates=/etc/apache2/sites-enabled/wordpress.conf
+
+    - name: set up the wp-cron schedule
+      # Ansible crons default to every minute. Using the more verbose
+      # action/args syntax because that command has too many funny characters.
+      action: cron
+      args:
+        user: webmaster
+        state: present
+        name: wp-cron
+        job: "curl -H'Host: {{wordpress_domain}}'
+                'localhost/wp-cron.php?doing_wp_cron=1' > /dev/null"
 
   handlers:
     - name: restart apache
