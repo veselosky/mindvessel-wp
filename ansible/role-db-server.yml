@@ -22,3 +22,6 @@
 
     - name: Remove MySQL test database
       mysql_db: name=test state=absent
+
+    - name: start mysql service
+      service: name=mysql state=started enabled=yes
