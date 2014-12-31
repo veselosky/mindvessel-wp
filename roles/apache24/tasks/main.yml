@@ -1,0 +1,93 @@
+---
+##################################################################
+# Apache 2.4 setup
+##################################################################
+- name: install apache web server
+  notify: restart apache
+  apt: pkg={{ item }} state=latest update_cache=yes cache_valid_time=3600
+  with_items:
+      - apache2
+      - python-passlib # required for ansible htpasswd module
+
+- name: activate common apache2 modules
+  notify: restart apache
+  apache2_module: name={{ item }} state=present
+  with_items:
+      #- access_compat # as Ubuntu configures it, this is ineffective.
+      - alias
+      - auth_basic
+      - auth_digest
+      - auth_form
+      - authn_core
+      - authn_file
+      - authz_core
+      - authz_host
+      - authz_user
+      - deflate
+      - dir
+      - env
+      - expires
+      - filter
+      - include
+      - info
+      - mime
+      - negotiation
+      - proxy
+      - proxy_fcgi
+      - rewrite
+      - setenvif
+      - status
+
+- name: create a webmaster group
+  group: name=webmaster state=present
+
+- name: create a webmaster user
+  user: name=webmaster
+        group=webmaster
+        state=present
+        update_password=on_create
+        password={{ webmaster_crypt_pass }}
+        home=/home/webmaster
+
+- name: create the website directories
+  # Should auto-create all parent dirs with same permissions.
+  file: path={{ defaultsite_root }}/public_html/adm
+        state=directory
+        owner=webmaster
+        group=webmaster
+        mode=0755
+
+- name: install htpasswd file for default host
+  # Store outside the docroot! Set up to be readable only by web server
+  htpasswd: path={{ defaultsite_root }}/htpasswd
+            state=present
+            name=webmaster
+            password={{ webmaster_pass }}
+            owner=webmaster
+            group=www-data
+            mode=0640
+
+- name: install a default index page
+  copy: src=index.html
+        dest={{ defaultsite_root }}/public_html/index.html
+        owner=webmaster
+        mode=0644
+
+- name: install a default apache vhost
+  notify: restart apache
+  template: >
+    src=default_vhost.conf.j2
+    dest=/etc/apache2/sites-available/001-default.conf
+
+- name: disable the system default apache vhost
+  notify: restart apache
+  command: a2dissite 000-default
+           removes=/etc/apache2/sites-enabled/000-default.conf
+
+- name: enable our installed default apache vhost
+  notify: restart apache
+  command: a2ensite 001-default
+           creates=/etc/apache2/sites-enabled/001-default.conf
+
+- name: start apache2 daemon
+  service: name=apache2 state=started enabled=true

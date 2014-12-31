@@ -18,7 +18,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     webserver.ssh.forward_agent = true
 
     webserver.vm.provision "ansible" do |ansible|
-        ansible.playbook = "ansible/site.yml"
+        ansible.playbook = "site.yml"
+        # ansible.raw_arguments = ['--check']
         ansible.groups = {
           "webservers" => ["webserver"],
           "wordpress-servers" => ["webserver"],

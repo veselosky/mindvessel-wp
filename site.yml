@@ -1,0 +1,20 @@
+---
+- name: base server setup
+  hosts: all
+  sudo: yes
+  roles:
+    - trusty
+
+- name: database server setup
+  hosts: database-servers
+  sudo: yes
+  roles:
+    - mariadb
+
+- name: web server setup
+  hosts: webservers
+  sudo: yes
+  roles:
+    - apache24
+    - php
+    - wordpress

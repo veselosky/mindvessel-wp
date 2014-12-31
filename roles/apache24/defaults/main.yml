@@ -1,0 +1,30 @@
+---
+webmaster: webmaster
+webmaster_home: /home/{{webmaster}}
+website_subdir: websites
+defaultsite_root: "{{webmaster_home}}/{{website_subdir}}/default"
+apache_modules:
+  #- access_compat # as Ubuntu configures it, this is ineffective.
+  - alias
+  - auth_basic
+  - auth_digest
+  - auth_form
+  - authn_core
+  - authn_file
+  - authz_core
+  - authz_host
+  - authz_user
+  - deflate
+  - dir
+  - env
+  - expires
+  - filter
+  - include
+  - info
+  - mime
+  - negotiation
+  - proxy
+  - proxy_fcgi
+  - rewrite
+  - setenvif
+  - status
