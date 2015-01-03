@@ -1,8 +1,11 @@
 ---
 webmaster: webmaster
 webmaster_home: /home/{{webmaster}}
-website_subdir: websites
-defaultsite_root: "{{webmaster_home}}/{{website_subdir}}/default"
+websites_home: "{{webmaster_home}}/websites"
+defaultsite_root: "{{websites_home}}/default"
+defaultsite_domain: localhost
+webserver: apache2
+webserver_user: www-data
 apache_modules:
   #- access_compat # as Ubuntu configures it, this is ineffective.
   - alias

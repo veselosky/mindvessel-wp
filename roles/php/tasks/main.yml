@@ -23,7 +23,7 @@
             backup=yes
             section=www
             option=listen
-            value={{ fastcgi_listen }}
+            value={{ php_fcgi_listen }}
 
 - name: restrict php-fpm to respond to local connections only
   notify: restart php5-fpm

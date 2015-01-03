@@ -1,10 +1,9 @@
-#=====================================================================
-# Redirect alias domains to main domain
-#=====================================================================
-#<VirtualHost *:80>
-#ServerName www.{{ domain }}
-#Redirect permanent / http://{{ domain }}/
-#</VirtualHost>
+{% if root_domain and redirect_root_domain %}
+<VirtualHost *:80>
+ServerName {{ root_domain }}
+Redirect / http://{{ wordpress_domain }}
+</VirtualHost>
+{% endif %}
 
 #=====================================================================
 # Main domain
@@ -15,11 +14,10 @@ DefaultType text/html
 DocumentRoot {{ wordpress_home }}/public_html/
 Alias /media {{ wordpress_home }}/media
 Alias /plugins {{ wordpress_home }}/plugins
-Alias /themes {{ wordpress_home }}/themes
 
 # Enable PHP files to be handled by fast CGI (php5-fpm)
 # NOTE: support for unix domain sockets not added until 2.4.8
-ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://{{ fastcgi_listen }}{{ wordpress_home }}/public_html/$1
+ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://{{ php_fcgi_listen }}{{ wordpress_home }}/public_html/$1
 
 <Directory {{ wordpress_home }}/public_html>
     Options Includes FollowSymLinks

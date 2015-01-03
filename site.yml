@@ -1,6 +1,17 @@
 ---
+- name: special for aws hosts
+  hosts: aws
+  sudo: yes
+  tasks:
+    # Will not recreate atop existing FS without force=yes.
+    - name: create filesystem on EBS volume if needed
+      filesystem: fstype=ext4 dev=/dev/xvdb
+
+    - name: mount an EBS vol on /home for easy backups
+      mount: name=/users src=/dev/xvdb fstype=ext4 state=mounted
+
 - name: base server setup
-  hosts: all
+  hosts: webservers
   sudo: yes
   roles:
     - trusty
@@ -14,6 +25,13 @@
 - name: web server setup
   hosts: webservers
   sudo: yes
+  vars:
+    root_domain: mindvessel.net
+    redirect_root_domain: yes
+    wordpress_domain: www.mindvessel.net
+    wordpress_title: Mindvessel
+    webmaster: webmaster
+    webmaster_home: "/users/webmaster"
   roles:
     - apache24
     - php

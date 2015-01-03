@@ -11,7 +11,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # Create a forwarded port mapping which allows access to a specific port
     # within the machine from a port on the host machine. In the example below,
     # accessing "localhost:8080" will access port 80 on the guest machine.
-    webserver.vm.network "forwarded_port", guest: 80, host: 8080
+    webserver.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.2"
 
     # If true, then any SSH connections made will enable agent forwarding.
     # Default value: false
@@ -26,14 +26,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           "database-servers" => ["webserver"]
         }
         ansible.extra_vars = {
-          "domain" => "localhost",
-          "fastcgi_listen" => "127.0.0.1:9000",
+          "ansible_ssh_user_home" => "/home/vagrant",
           "webmaster_pass" => "password",
+          "webmaster_home" => "/home/webmaster",
           "webmaster_crypt_pass" => "$6$rounds=100000$5UstpnzLCZ4VIcQ9$lOixDksA/xNMYe6WxqFb0pFRRYwhfF28MeggovS/InsJoD9GixfRdM0kFXVa.t/kMrhWjOTXtf2mNowfxoUM1.",
-          "wordpress_database_pass" => "weakpass",
-          "wordpress_domain" => "wordpress.localhost",
-          "wordpress_version" => "4.1",
-          "wordpress_sha256" => "3743d82698571903382dc223940e712f7bb5cfd20cedba7b7c32c97d470defab"
+          "wordpress_db_pass" => "weakpass",
+          "wordpress_url" => "mindvessel.net:8080",
+          "wordpress_admin_user" => "admin",
+          "wordpress_admin_pass" => "admin",
+          "mysql_host" => "localhost",
+          "mysql_root_user" => "root",
+          "mysql_root_pass" => ""
         }
     end
   end

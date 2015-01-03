@@ -16,7 +16,13 @@
       group: name=vince
 
     - name: create the vince user
-      user: name=vince group=vince password={{ vince_pass }} shell=/bin/bash
+      user: >
+        name=vince
+        group=vince
+        password={{ vince_pass }}
+        shell=/bin/bash
+        home={{ vince_home | default('/home/vince') }}
+        move_home=yes
 
     # Necessary because file system mounted here as root initially.
     - name: ensure home directory permissions

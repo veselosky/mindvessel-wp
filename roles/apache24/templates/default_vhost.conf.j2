@@ -1,16 +1,8 @@
 #=====================================================================
-# Redirect alias domains to main domain
-#=====================================================================
-#<VirtualHost *:80>
-#ServerName www.{{ domain }}
-#Redirect permanent / http://{{ domain }}/
-#</VirtualHost>
-
-#=====================================================================
 # Main domain
 #=====================================================================
 <VirtualHost *:80>
-ServerName {{ domain }}
+ServerName {{ defaultsite_domain }}
 DocumentRoot {{ defaultsite_root }}/public_html/
 DefaultType text/html
 
@@ -31,9 +23,11 @@ DefaultType text/html
     Require valid-user
 </Location>
 
+{% if php_fcgi_listen %}
 # Enable PHP files to be handled by fast CGI (php5-fpm)
 # NOTE: support for unix domain sockets not added until 2.4.8
-ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://{{ fastcgi_listen }}{{ defaultsite_root }}/public_html/$1
+ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://{{ php_fcgi_listen }}{{ defaultsite_root }}/public_html/$1
+{% endif %}
 
 DirectoryIndex index.html index.php
 
