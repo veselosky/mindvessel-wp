@@ -48,7 +48,7 @@
   - name: set permissions on wordpress wp-content directory
     # must be writable by web server
     file: >
-      path={{ wordpress_home }}/media
+      path={{ wordpress_home }}/media/uploads
       state=directory
       owner={{webmaster}}
       group={{ webserver_user }}
@@ -143,23 +143,29 @@
               --admin_email={{ wordpress_email }}
              chdir={{ wordpress_home }}/public_html"
 
-  - name: install iThemes Security plugin
+  - name: install Google Analytics plugin
     sudo_user: "{{ webmaster }}"
-    command: "{{ wordpress_home }}/bin/wp plugin install better-wp-security
+    command: "{{ wordpress_home }}/bin/wp plugin install google-analytics-dashboard-for-wp
              chdir={{ wordpress_home }}/public_html
-             creates={{ wordpress_home }}/plugins/better-wp-security"
+             creates={{ wordpress_home }}/plugins/google-analytics-dashboard-for-wp"
+
+  - name: install Cache plugin
+    sudo_user: "{{ webmaster }}"
+    command: "{{ wordpress_home }}/bin/wp plugin install w3-total-cache
+             chdir={{ wordpress_home }}/public_html
+             creates={{ wordpress_home }}/plugins/w3-total-cache"
+
+  - name: install SEO plugin
+    sudo_user: "{{ webmaster }}"
+    command: "{{ wordpress_home }}/bin/wp plugin install wordpress-seo
+             chdir={{ wordpress_home }}/public_html
+             creates={{ wordpress_home }}/plugins/wordpress-seo"
 
   - name: install PressForward plugin
     sudo_user: "{{ webmaster }}"
     command: "{{ wordpress_home }}/bin/wp plugin install pressforward
              chdir={{ wordpress_home }}/public_html
              creates={{ wordpress_home }}/plugins/pressforward"
-
-  - name: install Jetpack plugin
-    sudo_user: "{{ webmaster }}"
-    command: "{{ wordpress_home }}/bin/wp plugin install jetpack
-             chdir={{ wordpress_home }}/public_html
-             creates={{ wordpress_home }}/plugins/jetpack"
 
   - name: install apache vhost for wordpress
     notify: restart apache
