@@ -155,6 +155,14 @@
              chdir={{ wordpress_home }}/public_html
              creates={{ wordpress_home }}/plugins/w3-total-cache"
 
+  - name: install loader for Cache plugin
+    template: >
+      src=w3tc-wp-loader.php
+      dest={{ wordpress_home }}/plugins/w3tc-wp-loader.php
+      owner={{ webmaster }}
+      group={{ webmaster }}
+      mode=0644
+
   - name: install SEO plugin
     sudo_user: "{{ webmaster }}"
     command: "{{ wordpress_home }}/bin/wp plugin install wordpress-seo
