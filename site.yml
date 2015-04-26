@@ -34,5 +34,3 @@
     webmaster_home: "/users/webmaster"
   roles:
     - apache24
-    - php
-    - wordpress

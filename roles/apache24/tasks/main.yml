@@ -42,8 +42,8 @@
   group: name=webmaster state=present
 
 - name: create a webmaster user
-  user: name={{webmaster}}
-        group={{webmaster}}
+  user: name={{ webmaster }}
+        group={{ webmaster_group }}
         state=present
         update_password=on_create
         password={{ webmaster_crypt_pass }}
@@ -51,27 +51,27 @@
 
 - name: create the website directories
   # Should auto-create all parent dirs with same permissions.
-  file: path={{ defaultsite_root }}/public_html/adm
+  file: path={{ defaultsite_root }}/public_html
         state=directory
-        owner={{webmaster}}
-        group={{webmaster}}
+        owner={{ webmaster }}
+        group={{ webmaster_group }}
         mode=0755
 
-- name: install htpasswd file for default host
-  # Store outside the docroot! Set up to be readable only by web server
-  htpasswd: path={{ defaultsite_root }}/htpasswd
-            state=present
-            name={{webmaster}}
-            password={{ webmaster_pass }}
-            owner={{webmaster}}
-            group={{ webserver_user }}
-            mode=0640
+# - name: install htpasswd file for default host
+#   # Store outside the docroot! Set up to be readable only by web server
+#   htpasswd: path={{ defaultsite_root }}/htpasswd
+#             state=present
+#             name={{ webmaster }}
+#             password={{ webmaster_pass }}
+#             owner={{ webmaster }}
+#             group={{ http_service_group }}
+#             mode=0640
 
 - name: install a default index page
   copy: src=index.html
         dest={{ defaultsite_root }}/public_html/index.html
-        owner={{webmaster}}
-        group={{webmaster}}
+        owner={{ webmaster }}
+        group={{ webmaster_group }}
         mode=0644
 
 - name: install a default apache vhost

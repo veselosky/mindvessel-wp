@@ -5,6 +5,7 @@
 ServerName {{ defaultsite_domain }}
 DocumentRoot {{ defaultsite_root }}/public_html/
 DefaultType text/html
+DirectoryIndex index.html
 
 <Directory {{ defaultsite_root }}/public_html/>
     Options Includes FollowSymLinks
@@ -14,21 +15,13 @@ DefaultType text/html
 </Directory>
 
 # Password protect the /adm/ directory. Useful but sensitive stuff goes there.
-<Location /adm/>
-    AllowOverride None
-    AuthType Basic
-    AuthName "Administrative Resources"
-    AuthBasicProvider file
-    AuthUserFile {{ defaultsite_root }}/htpasswd
-    Require valid-user
-</Location>
-
-{% if php_fcgi_listen %}
-# Enable PHP files to be handled by fast CGI (php5-fpm)
-# NOTE: support for unix domain sockets not added until 2.4.8
-ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://{{ php_fcgi_listen }}{{ defaultsite_root }}/public_html/$1
-{% endif %}
-
-DirectoryIndex index.html index.php
+# <Location /adm/>
+#    AllowOverride None
+#    AuthType Basic
+#    AuthName "Administrative Resources"
+#    AuthBasicProvider file
+#    AuthUserFile {{ defaultsite_root }}/htpasswd
+#    Require valid-user
+# </Location>
 
 </VirtualHost>

@@ -22,22 +22,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # ansible.raw_arguments = ['--check']
         ansible.groups = {
           "webservers" => ["webserver"],
-          "wordpress-servers" => ["webserver"],
-          "database-servers" => ["webserver"]
+          # "database-servers" => ["webserver"]
         }
         ansible.extra_vars = {
           "ansible_ssh_user_home" => "/home/vagrant",
           "webmaster_pass" => "password",
           "webmaster_home" => "/home/webmaster",
           "webmaster_crypt_pass" => "$6$rounds=100000$5UstpnzLCZ4VIcQ9$lOixDksA/xNMYe6WxqFb0pFRRYwhfF28MeggovS/InsJoD9GixfRdM0kFXVa.t/kMrhWjOTXtf2mNowfxoUM1.",
-          "wordpress_db_pass" => "weakpass",
-          "wordpress_domain" => "wordpress.localhost",
-          "wordpress_url" => "wordpress.localhost:8080",
-          "wordpress_admin_user" => "admin",
-          "wordpress_admin_pass" => "admin",
-          "mysql_host" => "localhost",
-          "mysql_root_user" => "root",
-          "mysql_root_pass" => ""
+          # "mysql_host" => "localhost",
+          # "mysql_root_user" => "root",
+          # "mysql_root_pass" => ""
         }
     end
   end
